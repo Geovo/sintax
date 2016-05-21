@@ -1,0 +1,24 @@
+{
+  "name": "sintax.js",
+  "version": "1.0.0",
+  "description": "Easy-to-use syntax highlighter. Can work on server (for better performance) or colorize code in real-time.",
+  "main": "src/sintax.js",
+  "keywords": [
+    "syntax",
+    "highlighter",
+    "code",
+    "library"
+  ],
+  "author": {
+    "name": "Kristian Voshchepynets",
+    "url": "http://k2code.eu"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/Geovo/sintax.git"
+  },
+  "bugs": "https://github.com/Geovo/sintax.git",
+  "scripts": {
+    "test": "mocha tests/*"
+  }
+}
