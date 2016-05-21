@@ -11,17 +11,17 @@ var colors = {
     comment: "#777"
 };
 
-var css = `span.reserved {color: #FC29FF;}
-span.strings {color: #E4D642;}
-span.numbers {color: #fe4e44;}
-span.identifiers {color: #4d9cee;}
-span.special {color: #ffb225;}
-span.comment {color: #777;}
+var css = `span.sin_reserved {color: #FC29FF;}
+span.sin_strings {color: #E4D642;}
+span.sin_numbers {color: #fe4e44;}
+span.sin_identifiers {color: #4d9cee;}
+span.sin_special {color: #ffb225;}
+span.sin_comment {color: #777;}
 `;
 
 describe('sintax', function() {
   describe('generate_css()', function () {
-    it('generate valid css', function () {
+    it('should generate valid css', function () {
         var not_mini_without = sintax.generate_css(colors);
         var not_mini_with = sintax.generate_css(colors, false);
         var mini = sintax.generate_css(colors, true);
@@ -32,5 +32,30 @@ describe('sintax', function() {
         // should minify properly. No spaces allowed
         test.assert.equal(mini.indexOf(" "), -1);
     });
+  });
+
+  // test colorizer:
+  describe('colorize()', function() {
+     it('should understand numbers', function() {
+         // should parse number right
+         var simple_nums = ["459", "1983.9901", "1.1893124E+45"];
+         for (var i = 0; i < simple_nums.length; i++) {
+             var n = simple_nums[i];
+             var res = sintax.colorize(n);
+             test.string(res); // should be a string
+             test.assert.equal(sintax.colorize(n), "<span class='sin_numbers'>" + n + "</span>");
+         }
+     });
+     it ('should trim the whitespace', function() {
+         // should not have any appending whitespace
+         var white_nums = ["111   ", "9.1623462363426\t \n","9081.283E-12\n\n\t "];
+         for (var i = 0; i < white_nums.length; i++) {
+             var n = white_nums[i];
+             var res = sintax.colorize(n);
+             test.string(res); // should be a string
+             console.log("match: " + res + res.match(/[0-9]+\.[0-9]+(E[\+\-][0-9]+)?(^[\n\t ]+)/));
+             test.assert.strictEqual(res.match(/[0-9]+\.[0-9]+(E[\+\-][0-9]+)?(^[\n\t ]+)/), null);
+         }
+     });
   });
 });
