@@ -53,8 +53,37 @@ describe('sintax', function() {
              var n = white_nums[i];
              var res = sintax.colorize(n);
              test.string(res); // should be a string
-             console.log("match: " + res + res.match(/[0-9]+\.[0-9]+(E[\+\-][0-9]+)?(^[\n\t ]+)/));
+             console.log("match: " + res + res.match(/[0-9]+\.[0-9]+(E[\+\-][0-9]+)?(![\n\t ]+)/));
              test.assert.strictEqual(res.match(/[0-9]+\.[0-9]+(E[\+\-][0-9]+)?(^[\n\t ]+)/), null);
+         }
+     });
+
+     // let's check slashes in different situations
+     it ('should understand division operator', function() {
+         var t = ["5/1", "5/ 1", "5 /1", "5 / 1"];
+         var mid = ["/", "/ ", " /", " / "];
+         for (var i = 0; i < t.length; i++) {
+             var tres = sintax.colorize(t[i]);
+             test.string(tres);
+             test.assert.strictEqual("<span class='sin_numbers'>5</span>" + mid[i] + "<span class='sin_numbers'>1</span>", tres);
+         }
+
+         // the same, but with identifiers:
+         t = ["a/b", "a/ b", "a /b", "a / b"];
+         for (var i = 0; i < t.length; i++) {
+             var tres = sintax.colorize(t[i]);
+             test.string(tres);
+             test.assert.strictEqual("<span class='sin_identifiers'>a</span>" + mid[i] + "<span class='sin_identifiers'>b</span>", tres);
+         }
+     });
+
+     it ('should understand regexp', function() {
+         var t = ["/abc/"]//, "/\//", "/a+([^ub]|[0-9]\*\.)/g", "/[0-9]+(\.[0-9]+(E[\+\-][0-9])?)/gi"];
+         for (var i = 0; i < t.length; i++) {
+             var tres = sintax.colorize(t[i]);
+             console.log("result: " + tres);
+             test.string(tres);
+             test.assert.strictEqual("<span class='sin_special'>" + t[i] + "</span>", tres);
          }
      });
   });
