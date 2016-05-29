@@ -66,13 +66,14 @@ describe('sintax', function() {
 
      it ('should recognize simple strings', function() {
          // should not have any appending whitespace
-         var simple_strings = ["I'm a string", "Stringify me, baby!", "Jelly Beans are really tasty and I mean it! See you in court! :)"];
+         var simple_strings = ["'I\\' am a string'", "'Stringify me, baby!'", "'Jelly Beans are really tasty and I mean it! See you in court! :)'"];
          for (var i = 0; i < simple_strings.length; i++) {
              var n = simple_strings[i];
              var res = dfa.colorize(n);
              test.string(res); // should be a string
+             console.log(res);
              //console.log("match: " + res + res.match(/[0-9]+\.[0-9]+(E[\+\-][0-9]+)?(![\n\t ]+)/));
-             test.assert.notEqual(res.match(/^\<span class=\'sin_strings\'\>.+\<\/span\>$/), null);
+             test.assert.notEqual(res.match(/\<span class=\'sin_strings\'\>.+\<\/span\>/), null);
          }
      });
 

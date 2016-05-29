@@ -6,7 +6,8 @@
 'use strict';
 var out = "",
     cache = "",
-    spanOpen = false;
+    spanOpen = false,
+    quot = "";
 
 
 function Transition(input, next, exec) {
@@ -168,6 +169,11 @@ const JS = {
         //console.log("fs2_2: " + c);
     },
 
+    preEnd: function(c) {
+        out += c + "</span>";
+        spanOpen = false;
+    },
+
     endSpan: function(c) {
         out += "</span>" + c;
         spanOpen = false;
@@ -175,8 +181,11 @@ const JS = {
     },
 
     addSpan: function(c) {
-        out += "<span class='sin_numbers'>" + c;
-        spanOpen = true;
+        function col(klass) {
+            out += "<span class='sin_" + c + "'>" + klass;
+            spanOpen = true;
+        }
+        return col;
         //console.log("fs3_4: </span>");
     },
 
@@ -201,8 +210,21 @@ const JS = {
         out += cache + c;
         cache = "";
     },
+
+    startString: function(c) {
+        //function ret() {
+        quot = c;
+        out += "<span class='" + class_prefix + "strings'>" + c;
+        //}
+    },
+
+    escapeQuote: function(c) {
+        var ret = {"\"": /\"/, "'": /\'/, "`": /\`/};
+        return ret[quot];
+    },
     /* regexp's
     ** Parsing Numbers: */
+    any: /./,
     num: /[0-9]/,
     dot: /\./,
     notNum: /[^0-9]/,
@@ -212,9 +234,8 @@ const JS = {
     plusMinus: /[\+\-]/,
 
     /** Parsing Strings: **/
-    singleQuote: /\'/,
-    doubleQuote: /\"/,
-    backtickQuote: /\`/,
+    Quote: /[\'\"\`]/,
+    escape: /\\/,
 
     /**  **/
 
@@ -229,8 +250,12 @@ const JSStates = {
     states: [
         /* Getting a number */
         new State(0, [
-            new Transition(JS.num, 1, JS.addSpan),
-            new Transition(JS.notNum, 0, JS.addChar)
+            new Transition(JS.num, 1, JS.addSpan("numbers")),
+            new Transition(JS.Quote, 5, JS.startString),
+            //new Transition(JS.doubleQuote, 5, JS.addSpan("strings")),
+
+            // this is the last - default
+            new Transition(JS.notNum, 0, JS.addChar),
         ]),
         /* Either stop, add further chars or move to parsing float */
         new State(1, [
@@ -253,7 +278,17 @@ const JSStates = {
         new State(4, [
             new Transition(JS.num, 4, JS.addChar),
             new Transition(JS.notNum, 0, JS.endSpan),
-        ])
+        ]),
+        /*  Add new states for parsing strings.
+            Starting with single quotes */
+        new State(5, [
+            new Transition(JS.Quote, 0, JS.preEnd),
+            new Transition(JS.escape, 6, JS.addChar),
+            new Transition(JS.any, 5, JS.addChar),
+        ]),
+        new State(6, [
+            new Transition(JS.any, 5, JS.addChar),
+        ]),
     ]
 };
 
