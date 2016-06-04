@@ -44,7 +44,7 @@ describe('sintax', function() {
      it('should understand numbers', function() {
          // should parse number right
          var simple_nums = ["459", "1983.9901", "1.1893124E+45"];
-         console.log(dfa._states);
+         //console.log(dfa._states);
          for (var i = 0; i < simple_nums.length; i++) {
              var n = simple_nums[i];
              var res = dfa.colorize(n);
@@ -71,9 +71,22 @@ describe('sintax', function() {
              var n = simple_strings[i];
              var res = dfa.colorize(n);
              test.string(res); // should be a string
-             console.log(res);
+            // console.log(res);
              //console.log("match: " + res + res.match(/[0-9]+\.[0-9]+(E[\+\-][0-9]+)?(![\n\t ]+)/));
              test.assert.notEqual(res.match(/\<span class=\'sin_strings\'\>.+\<\/span\>/), null);
+         }
+     });
+
+     it ('should recognize identifiers', function() {
+         // should not have any appending whitespace
+         var ids = ["var a = 5;", "function c(a) {\n\treturn a;\n}", "// states should start with 0 and the initial should be 0\nfunction sintax(states) {\n    var saved = states;\n    var dfa = new DFA(states, 0);\n    //var out = \"\";\n\n    function colorize(text) {\n        out = \"\";\n        dfa = new DFA(saved, 0);\n        var iter = byChar(text);\n        while (iter.hasNext())\n            dfa.move(iter.next());\n        if (spanOpen)\n            out += \"</span>\";\n        console.log(out)\n        return out;\n    }\n\n    return {\n        dfa: dfa,\n        //out: out,\n        colorize: colorize\n    };\n}"];
+         for (var i = 0; i < ids.length; i++) {
+             var n = ids[i];
+             var res = dfa.colorize(n);
+             test.string(res); // should be a string
+            // console.log(res);
+             //console.log("match: " + res + res.match(/[0-9]+\.[0-9]+(E[\+\-][0-9]+)?(![\n\t ]+)/));
+             //test.assert.notEqual(res.match(/\<span class=\'sin_strings\'\>.+\<\/span\>/), null);
          }
      });
 

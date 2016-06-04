@@ -58,10 +58,10 @@ DFA.prototype.move = function(inp) {
         //console.log(t[i]);
         if (this.matcher(inp, t[i].input)) {
             // call function
-            console.log("passing inp: " + inp);
+            //console.log("passing inp: " + inp);
             t[i].run(inp);
             this.current = t[i].next;
-            console.log("switched to state: " + this.current);
+            //console.log("switched to state: " + this.current);
             noTransition = false;
             break;
         }
@@ -70,7 +70,7 @@ DFA.prototype.move = function(inp) {
         // then either the dfa doesn't accept or accepts
         //if (this._states[this.current].halt)
             // accept
-            console.log("dfa finished");
+            //console.log("dfa finished");
             if (spanOpen) {
                 JS.endSpan("");
                 spanOpen = false;
@@ -151,7 +151,7 @@ function sintax(states) {
             dfa.move(iter.next());
         if (spanOpen)
             out += "</span>";
-        console.log("out: " + out)
+        console.log(out)
         return out;
     }
 
@@ -189,17 +189,17 @@ const JS = {
         //console.log("fs3_4: </span>");
     },
 
-    notSure: function(c) {
-        cache += "c";
-    },
-
-    clearNotSure: function(c) {
-        cache = c;
-    },
-
     uncache: function(c) {
         out += cache + c;
         cache = "";
+    },
+
+    cacheClean: function(c) {
+        //cache = c;
+    },
+
+    cache: function(c) {
+        cache += c;
     },
 
     endSpan_uncache: function(c) {
@@ -218,9 +218,22 @@ const JS = {
         //}
     },
 
-    escapeQuote: function(c) {
-        var ret = {"\"": /\"/, "'": /\'/, "`": /\`/};
-        return ret[quot];
+    decideId: function(c) {
+        // now decide whether we got a special keyword
+        if (cache.match(/var|function|const|let|match|map|toString|class|return|new|module|if|else|switch|case|while|for|do|window|Object|Number|String|null|undefined/)) {
+            // is reserved
+            out += "<span class='sin_reserved'>";
+        } else if (c === "(") {
+            out += "<span class='sin_identifiers'>";
+        } else {
+            out += cache + c;
+            cache = "";
+            return;
+        }
+
+        // add the rest to out and empty cache
+        out += cache + "</span>" + c;
+        cache = "";
     },
     /* regexp's
     ** Parsing Numbers: */
@@ -237,7 +250,11 @@ const JS = {
     Quote: /[\'\"\`]/,
     escape: /\\/,
 
-    /**  **/
+    /** Identifiers: **/
+    idStart: /[a-zA-Z_]/,
+    idAll: /[a-zA-Z_0-9]/,
+    notIdStart: /[^a-zA-Z_]/,
+    notIdAll: /[^a-zA-Z_0-9]/,
 
     reserved: function(word) {
         return word.match(/var|function|const|let|match|map|toString|class/);
@@ -252,6 +269,7 @@ const JSStates = {
         new State(0, [
             new Transition(JS.num, 1, JS.addSpan("numbers")),
             new Transition(JS.Quote, 5, JS.startString),
+            new Transition(JS.idStart, 7, JS.cacheClean),
             //new Transition(JS.doubleQuote, 5, JS.addSpan("strings")),
 
             // this is the last - default
@@ -288,6 +306,11 @@ const JSStates = {
         ]),
         new State(6, [
             new Transition(JS.any, 5, JS.addChar),
+        ]),
+        /*  Recognize identifiers. Colorize them if special or function */
+        new State(7, [
+            new Transition(JS.idAll, 7, JS.cache),
+            new Transition(JS.notIdAll, 0, JS.decideId),
         ]),
     ]
 };
