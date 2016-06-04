@@ -1,0 +1,139 @@
+{
+    "states": [
+        [{
+            "trigger": "num",
+            "moveTo": "1",
+            "func": "addSpan",
+            "params": ["number"]
+        }, {
+            "trigger": "Quote",
+            "moveTo": "5",
+            "func": "startString",
+            "params": []
+        }, {
+            "trigger": "idStart",
+            "moveTo": "7",
+            "func": "cacheClean",
+            "params": []
+        }, {
+            "trigger": "notNum",
+            "moveTo": "0",
+            "func": "addChar",
+            "params": []
+        }],
+
+        [{
+            "trigger": "num",
+            "moveTo": "1",
+            "func": "addChar",
+            "params": []
+        }, {
+            "trigger": "dot",
+            "moveTo": "2",
+            "func": "addChar",
+            "params": []
+        }, {
+            "trigger": "notNum",
+            "moveTo": "0",
+            "func": "endSpan",
+            "params": []
+        }],
+
+        [{
+            "trigger": "num",
+            "moveTo": "2",
+            "func": "addChar",
+            "params": []
+        }, {
+            "trigger": "exp",
+            "moveTo": "3",
+            "func": "addChar",
+            "params": []
+        }, {
+            "trigger": "notNum",
+            "moveTo": "0",
+            "func": "endSpan",
+            "params": []
+        }],
+        [{
+            "trigger": "plusMinus",
+            "moveTo": "4",
+            "func": "addChar",
+            "params": []
+        }, {
+            "trigger": "num",
+            "moveTo": "4",
+            "func": "addChar",
+            "params": []
+        }, {
+            "trigger": "notNum",
+            "moveTo": "0",
+            "func": "endSpan",
+            "params": []
+        }],
+        [{
+            "trigger": "num",
+            "moveTo": "4",
+            "func": "addChar",
+            "params": []
+        }, {
+            "trigger": "notNum",
+            "moveTo": "0",
+            "func": "endSpan",
+            "params": []
+        }],
+
+        [{
+            "trigger": "Quote",
+            "moveTo": "0",
+            "func": "preEnd",
+            "params": []
+        }, {
+            "trigger": "escape",
+            "moveTo": "6",
+            "func": "addChar",
+            "params": []
+        }, {
+            "trigger": "any",
+            "moveTo": "5",
+            "func": "addChar",
+            "params": []
+        }],
+        [{
+            "trigger": "any",
+            "moveTo": "5",
+            "func": "addChar",
+            "params": []
+        }],
+
+        [{
+            "trigger": "idAll",
+            "moveTo": "7",
+            "func": "cache",
+            "params": []
+        }, {
+            "trigger": "notIdAll",
+            "moveTo": "0",
+            "func": "decideId",
+            "params": ["var|function|const|let|match|map|toString|class|return|new|module|if|else|switch|case|while|for|do|window|Object|Number|String|null|undefined"]
+        }]
+
+    ],
+    "regex": {
+        "any": ".",
+        "num": "[0-9]",
+        "dot": "\\.",
+        "notNum": "[^0-9]",
+        "notDot": "[^\\.]",
+        "id": "[a-zA-Z_]",
+        "exp": "E",
+        "plusMinus": "[\\+\\-]",
+        "Quote": "[\\'\"\\`]",
+        "escape": "\\",
+        "idStart": "[a-zA-Z_]",
+        "idAll": "[a-zA-Z_0-9]",
+        "notIdStart": "[^a-zA-Z_]",
+        "notIdAll": "[^a-zA-Z_0-9]"
+    }
+
+}

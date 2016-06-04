@@ -1,91 +1,130 @@
-/* Sintax main file
- * Author: Kristian Voshchepynets
+'use strict';
+
+const Languages = require("./langs.js");
+const Logic = require("./logic.js");
+//const config = require("./langs.js");
+
+/*
+ * @constructor
+ * @param {string} language
  *
  */
+class Sintax {
+    constructor(language) {
+        // language Should be a string of the name (e.g. js, ruby etc)
+        //var l = language.toLowerCase() + "lang";
+        this.shared = {
+            out: "",
+            cache: "",
+            iterator: Iterator(""),
+            spanOpen: false,
+            quot: ""
+        };
+        var nulang = this.createLanguage(language.toLowerCase() + "_lang");
+//		var st = new State(test);
+        this.language = language;
+        //console.log("language: ", language());
+        this.dfa = new DFA(this.shared, nulang);
+    }
 
-'use strict';
-var out = "",
-    cache = "",
-    spanOpen = false,
-    quot = "";
+    changeLanguage(language) {
+        this.language = language;
+        this.dfa.states = language.states;
+    }
 
+    createLanguage(name) {
+        // get the configured language if exists
+        var config;
+        if ((config = Languages[name]) == null)
+            return null;//throw Exception("Shit");
+        // get the regexes
+        var regexes = config.regex;
+        // loop through the states, build array
+        var states = [], curr, transitions;
+        for (var i = 0; i < config.states.length; i++) {
+            // loop through each transition of each state
+            curr = config.states[i];
+            transitions = [];
+            for (var j = 0; j < curr.length; j++) {
+                transitions.push(new Transition(curr[j], regexes));
+            }
+            states.push(new State(i, transitions));
+        }
+        return states;
+    }
 
-function Transition(input, next, exec) {
-    this.input = input;
-    this.next = next;
-    this._exec = exec;
+    highlight(text) {
+        if (text == null) {
+            console.log("You think I will colorize the void? Nope :)");
+            return;
+        }
+        // passing input here
+        this.shared.iterator = Iterator(text);
+        while (this.shared.iterator.hasNext()) {
+            this.dfa.move(this.shared.iterator.next());
+            // DEBUG:
+            //console.log(this.shared);
+        }
+        // close last span if any
+        if (this.shared.spanOpen)
+            this.shared.out += "</span>";
+
+        // return the out Object
+        return this.shared.out;
+    }
 }
 
-Transition.prototype.run = function(c) {
-    this._exec(c);
-}
+class State {
+    constructor(id, transitions) {
+        this.id = id;
+        this.transitions = transitions;
+    }
 
-function State(id, transitions, halt) {
-    this.id = id;
-    this.transitions = transitions;
-    this.halt = halt;
-}
-
-
-function DFA(states, initial) {
-    this._states = states;
-    this._initial = initial;
-    this.current = initial;
-    //this._currstr = "";
-    //this.out = "";
-}
-
- DFA.prototype.matcher = function(input, reg) {
-    // console.log("matching: " + input + " with " + reg);
-     if (input == null)
-         return false;
-     if (reg == null)
-         if (input == null)
-             return true;
-         else
-             return false;
-     else
-         return input.match(reg);
- }
-
-     // make transition here
-DFA.prototype.move = function(inp) {
-    //this._currstr += inp;
-    //console.log("current: " + this.current + " t: " + this._states[0]);
-    var t = this._states[this.current].transitions;
-    var noTransition = true;
-    for (var i = 0; i < t.length; i++) {
-        //console.log(t[i]);
-        if (this.matcher(inp, t[i].input)) {
-            // call function
-            //console.log("passing inp: " + inp);
-            t[i].run(inp);
-            this.current = t[i].next;
-            //console.log("switched to state: " + this.current);
-            noTransition = false;
-            break;
+    tryMove(shared, input) {
+        for (var i = 0; i < this.transitions.length; i++) {
+            if (input != null && input.match(this.transitions[i].trigger)) {
+                this.transitions[i].func(shared, input, this.transitions[i].params);
+                // DEBUG:
+                //console.log("moved to other: ", this.transitions[i].moveTo);
+                return this.transitions[i].moveTo;
+            }
         }
     }
-    if (noTransition) {
-        // then either the dfa doesn't accept or accepts
-        //if (this._states[this.current].halt)
-            // accept
-            //console.log("dfa finished");
-            if (spanOpen) {
-                JS.endSpan("");
-                spanOpen = false;
-            }
-        //else
-            // don't accept
-        //    console.log("ERROR: dfa doesn't accept");
+}
+
+class Transition {
+    constructor(config, regex) {
+        if (config == null)
+            return null;
+        //console.log(config.trigger, regex[config.trigger]);
+        try {
+            this.trigger = new RegExp(regex[config.trigger]);
+        } catch (m) {
+            //console.log("crashing with " + m + " | " + config.trigger);
+        }
+
+        this.moveTo = config.moveTo;
+        this.func = Logic[config.func];
+        this.params = config.params || [];
     }
 }
 
-// const skeleton = require("./skeleton.js");
-//const lang = require("./languages.js");
+class DFA {
+    constructor(shared, states) {
+        this.shared = shared;
+        this.states = states;
+        this.current = 0;
+    }
 
+    move(input) {
+//		this.shared.out += input;
+        this.current = this.states[this.current].tryMove(this.shared, input);
+    }
+}
+
+// here goes the iterator
 // process text
-function byChar(input) {
+function Iterator(input) {
     var i = 0;
 
     function hasNext() {
@@ -96,248 +135,94 @@ function byChar(input) {
         return input[i++];
     }
 
+    function peek() {
+        return input[i];
+    }
+
+    // sets the iterator to num || 0 again
+    function resetTo(num) {
+        if (num && num >= 0)
+            i = num;
+        else {
+            i = 0;
+        }
+    }
+
+    function swapInput(nu) {
+        input = nu;
+        i = 0;
+    }
+
+    // will probably used only when dealing with slash ambiguity, such as
+    // is it a comment, division operator or regular expression (if exists).
+    // in this case will need to go backwards and search for some context that
+    // will tell us where we are.
+    function isRegexp() {
+        var curr = i-1,
+            id = /[a-zA-Z0-9_]/;
+
+        // skip whitespace
+        for (; curr >= 0 && input[curr].match(/[\t \b]/); curr--) ;
+        // if =, :, !, or ( -- return true
+        if (curr === -1 || input[curr].match(/[\=\:\!\(\+]/))
+            return true;
+        else if (input[curr].match(id)) {
+            // get the identifier itself and check if it === "return"
+            var ident = input[curr];
+            for (; input[curr] != null && curr > 0 && input[curr].match(id); curr--, ident += input[curr]) ;
+            ident = ident.split("").reverse().join("");
+            if (ident.match(/^return$/))
+                return true;
+        }
+        return false;
+    }
+
     return {
         next: next,
-        hasNext: hasNext
+        hasNext: hasNext,
+        peek: peek,
+        isRegexp: isRegexp
     };
     //return r;
 }
 
+//console.log(config.js_lang.states);
+//console.log("match: ", "hello".match(new RegExp(config.js_lang.states[0][0].trigger)));
+//console.log(JSON.parse(config));
 
-var colors = {
-    reserved: "#FC29FF",
-    strings: "#E4D642",
-    numbers: "#fe4e44",
-    identifiers: "#4d9cee",
-    special: "#ffb225",
-    comment: "#777"
-};
+var s = new Sintax("js");
+var out = s.highlight("var abc = 5.1232E-42");
+console.log(out);
+/*console.log("State 7: ", s.dfa.states[7]);
+s.dfa.move("a");
+console.log(s.shared);
+s.dfa.move("b");
+console.log(s.shared);
+s.dfa.move(" ");
+console.log(s.shared);*/
 
-const class_prefix = "sin_"; // prefix for CSS-classes
-
-function generate_css(cols, minify) {
-    minify = minify | false;
-    function structure_css(klass, val) {
-        return minify ? `span.${class_prefix}${klass}{color:${val};}` : `span.${class_prefix}${klass} {color: ${val};}\n`;
+/*var it = Iterator("a = /bc/;");
+function iterate(it) {
+    while (it.hasNext()) {
+        if (it.peek() === "/") {
+            console.log(it.isRegexp());
+            it.next();
+        } else
+            it.next();
     }
-
-    var out = "";
-    for (var k in cols) {
-        out += structure_css(k, cols[k]);
-    }
-    return out;
 }
 
-//console.log(generate_css(colors));
-
-// global out for now
-/*var out = "",
-    cache = "",
-    spanOpen = false;
-
-*/
-
-// states should start with 0 and the initial should be 0
-function sintax(states) {
-    var saved = states;
-    var dfa = new DFA(states, 0);
-    //var out = "";
-
-    function colorize(text) {
-        out = "";
-        dfa = new DFA(saved, 0);
-        var iter = byChar(text);
-        while (iter.hasNext())
-            dfa.move(iter.next());
-        if (spanOpen)
-            out += "</span>";
-        console.log(out)
-        return out;
-    }
-
-    return {
-        dfa: dfa,
-        //out: out,
-        colorize: colorize
-    };
-}
+iterate(it);
+it = Iterator("return /bc/;");
+iterate(it);*/
+// add another string
+//s.dfa.move(" another");
+//console.log(s.shared);
 
 
-const JS = {
-    addChar: function(c) {
-        out += c;
-        //console.log("fs2_2: " + c);
-    },
-
-    preEnd: function(c) {
-        out += c + "</span>";
-        spanOpen = false;
-    },
-
-    endSpan: function(c) {
-        out += "</span>" + c;
-        spanOpen = false;
-        //console.log("fs2_3: " + c + "</span>");
-    },
-
-    addSpan: function(c) {
-        function col(klass) {
-            out += "<span class='sin_" + c + "'>" + klass;
-            spanOpen = true;
-        }
-        return col;
-        //console.log("fs3_4: </span>");
-    },
-
-    uncache: function(c) {
-        out += cache + c;
-        cache = "";
-    },
-
-    cacheClean: function(c) {
-        //cache = c;
-    },
-
-    cache: function(c) {
-        cache += c;
-    },
-
-    endSpan_uncache: function(c) {
-        // endSpan("");
-        out += "</span>" + c;
-        spanOpen = false;
-        //uncache(c);
-        out += cache + c;
-        cache = "";
-    },
-
-    startString: function(c) {
-        //function ret() {
-        quot = c;
-        out += "<span class='" + class_prefix + "strings'>" + c;
-        //}
-    },
-
-    decideId: function(c) {
-        // now decide whether we got a special keyword
-        if (cache.match(/var|function|const|let|match|map|toString|class|return|new|module|if|else|switch|case|while|for|do|window|Object|Number|String|null|undefined/)) {
-            // is reserved
-            out += "<span class='sin_reserved'>";
-        } else if (c === "(") {
-            out += "<span class='sin_identifiers'>";
-        } else {
-            out += cache + c;
-            cache = "";
-            return;
-        }
-
-        // add the rest to out and empty cache
-        out += cache + "</span>" + c;
-        cache = "";
-    },
-    /* regexp's
-    ** Parsing Numbers: */
-    any: /./,
-    num: /[0-9]/,
-    dot: /\./,
-    notNum: /[^0-9]/,
-    notDot: /[^\.]/,
-    id: /[a-zA-Z_]/,
-    exp: /E/,
-    plusMinus: /[\+\-]/,
-
-    /** Parsing Strings: **/
-    Quote: /[\'\"\`]/,
-    escape: /\\/,
-
-    /** Identifiers: **/
-    idStart: /[a-zA-Z_]/,
-    idAll: /[a-zA-Z_0-9]/,
-    notIdStart: /[^a-zA-Z_]/,
-    notIdAll: /[^a-zA-Z_0-9]/,
-
-    reserved: function(word) {
-        return word.match(/var|function|const|let|match|map|toString|class/);
-    }
-    //states: [state1, state2, state3, state4]
-}
-
-const JSStates = {
-    // create dummy states
-    states: [
-        /* Getting a number */
-        new State(0, [
-            new Transition(JS.num, 1, JS.addSpan("numbers")),
-            new Transition(JS.Quote, 5, JS.startString),
-            new Transition(JS.idStart, 7, JS.cacheClean),
-            //new Transition(JS.doubleQuote, 5, JS.addSpan("strings")),
-
-            // this is the last - default
-            new Transition(JS.notNum, 0, JS.addChar),
-        ]),
-        /* Either stop, add further chars or move to parsing float */
-        new State(1, [
-            new Transition(JS.num, 1, JS.addChar),
-            new Transition(JS.dot, 2, JS.addChar),
-            new Transition(JS.notNum, 0, JS.endSpan)
-        ]),
-        /* Add digits after dot or get an E - move to exponent */
-        new State(2, [
-            new Transition(JS.num, 2, JS.addChar),
-            new Transition(JS.exp, 3, JS.addChar),
-            new Transition(JS.notNum, 0, JS.endSpan)
-        ]),
-        new State(3, [
-            /* If not plus or minus after E, but a number, then move on */
-            new Transition(JS.plusMinus, 4, JS.addChar),
-            new Transition(JS.num, 4, JS.addChar),
-            new Transition(JS.notNum, 0, JS.endSpan),
-        ]),
-        new State(4, [
-            new Transition(JS.num, 4, JS.addChar),
-            new Transition(JS.notNum, 0, JS.endSpan),
-        ]),
-        /*  Add new states for parsing strings.
-            Starting with single quotes */
-        new State(5, [
-            new Transition(JS.Quote, 0, JS.preEnd),
-            new Transition(JS.escape, 6, JS.addChar),
-            new Transition(JS.any, 5, JS.addChar),
-        ]),
-        new State(6, [
-            new Transition(JS.any, 5, JS.addChar),
-        ]),
-        /*  Recognize identifiers. Colorize them if special or function */
-        new State(7, [
-            new Transition(JS.idAll, 7, JS.cache),
-            new Transition(JS.notIdAll, 0, JS.decideId),
-        ]),
-    ]
-};
-
-//var s = sintax(lang.JS());
-//s.colorize("145.14");
-//console.log(s.out);
-module.exports = {
-    js: JSStates,
-    init: sintax,
-    generate_css: generate_css,
-    iterator: byChar,
-    out: out
-};
-
-/*var sintax = sintax(JSStates.states);
-
-sintax.colorize("145.14");
-console.log(out);*/
-//JS.print()
-
-/*var simple_nums = ["459", "1983.9901", "1.1893124E+45"];
-var dfa = sintax(JSStates.states);
-console.log(dfa);
-for (var i = 0; i < simple_nums.length; i++) {
-    var n = simple_nums[i];
-    //var res = dfa.colorize(n);
-    //test.string(res); // should be a string
-    //test.assert.equal(dfa.colorize(n), "<span class='sin_numbers'>" + n + "</span>");
-}*/
+/*var s1 = new Sintax(JSLang);
+s1.dfa.move("new test");
+//console.log(s1.shared);
+// add another string
+s1.dfa.move(" and other stuff");*/
+//console.log(s1.shared);
