@@ -20,5 +20,12 @@
   "bugs": "https://github.com/Geovo/sintax.git",
   "scripts": {
     "test": "mocha tests/*"
+  },
+  "dependencies": {
+    "grunt": "^1.0.1"
+  },
+  "devDependencies": {
+    "grunt-contrib-watch": "^1.0.0",
+    "grunt-mocha-test": "^0.12.7"
   }
 }

@@ -139,7 +139,7 @@ describe('sintax.', function() {
 
              // let's try out some basic ops
              it ("should colorize basic operators", function() {
-                 
+                 var tests = ["a + 23 = c;"];
              });
          });
 
