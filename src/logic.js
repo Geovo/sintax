@@ -18,6 +18,29 @@ module.exports = {
         shared.spanOpen = false;
     },
 
+    /* Handling strings here */
+    startString: function(shared, input, params) {
+        shared.quot = input;
+        shared.out += "<span class='sin_strings'>" + input;
+        shared.spanOpen = true;
+    },
+
+    endString: function(shared, input, params) {
+        // even if input should be null, it's "safely"
+        // converted to ""
+        if (input !== shared.quot && input != "") {
+            // DEBUG:
+            //console.log("input is: ", input);
+            shared.cache += input;
+            return;
+        }
+        // DEBUG:
+        //console.log("called endString");
+
+        shared.out += shared.cache + input + "</span>";
+        shared.cache = "";
+    },
+
     endSpan: function(shared, input, params) {
         shared.out += "</span>" + input;
         shared.spanOpen = false;
@@ -51,13 +74,6 @@ module.exports = {
         //uncache(c);
         shared.out += shared.cache + input;
         shared.cache = "";
-    },
-
-    startString: function(shared, input, params) {
-        //function ret() {
-        shared.quot = input;
-        shared.out += "<span class='" + class_prefix + "strings'>" + input;
-        //}
     },
 
     decideId: function(shared, input, params) {

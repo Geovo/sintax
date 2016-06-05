@@ -2,7 +2,7 @@
 
 const Languages = require("./langs.js");
 const Logic = require("./logic.js");
-//const config = require("./langs.js");
+const Colors = require("./colors.js");
 
 /*
  * @constructor
@@ -58,6 +58,7 @@ class Sintax {
             console.log("You think I will colorize the void? Nope :)");
             return;
         }
+
         // passing input here
         this.shared.iterator = Iterator(text);
         while (this.shared.iterator.hasNext()) {
@@ -65,12 +66,30 @@ class Sintax {
             // DEBUG:
             //console.log(this.shared);
         }
+        // do the last move with empty input
+        this.dfa.move(this.shared.iterator.next());
         // close last span if any
-        if (this.shared.spanOpen)
-            this.shared.out += "</span>";
+        /*if (this.shared.spanOpen)
+            this.shared.out += "</span>";*/
 
         // return the out Object
-        return this.shared.out;
+        var out = this.shared.out;
+
+        // do some basic clean ups
+        this.cleanUp();
+
+        return out;
+    }
+
+    cleanUp() {
+        //if (this.shared.cache !== "")
+
+        // set shared values back to default
+        this.shared.out = "";
+        this.shared.cache = "";
+        this.shared.spanOpen = false;
+        this.shared.quot = "";
+        this.dfa.current = 0;
     }
 }
 
@@ -81,11 +100,15 @@ class State {
     }
 
     tryMove(shared, input) {
+        if (input == null)
+            input = "";
         for (var i = 0; i < this.transitions.length; i++) {
             if (input != null && input.match(this.transitions[i].trigger)) {
                 this.transitions[i].func(shared, input, this.transitions[i].params);
                 // DEBUG:
-                //console.log("moved to other: ", this.transitions[i].moveTo);
+                if (input == null)
+                console.log("moved to other: ", this.transitions[i]);
+                //console.log("triggered by: ", this.id, " and -> ", this.transitions[i]);
                 return this.transitions[i].moveTo;
             }
         }
@@ -97,11 +120,7 @@ class Transition {
         if (config == null)
             return null;
         //console.log(config.trigger, regex[config.trigger]);
-        try {
-            this.trigger = new RegExp(regex[config.trigger]);
-        } catch (m) {
-            //console.log("crashing with " + m + " | " + config.trigger);
-        }
+        this.trigger = new RegExp(regex[config.trigger]);
 
         this.moveTo = config.moveTo;
         this.func = Logic[config.func];
@@ -118,6 +137,7 @@ class DFA {
 
     move(input) {
 //		this.shared.out += input;
+        //console.log("this.current: " + this.current);
         this.current = this.states[this.current].tryMove(this.shared, input);
     }
 }
@@ -186,13 +206,13 @@ function Iterator(input) {
     //return r;
 }
 
-//console.log(config.js_lang.states);
-//console.log("match: ", "hello".match(new RegExp(config.js_lang.states[0][0].trigger)));
-//console.log(JSON.parse(config));
-
-var s = new Sintax("js");
-var out = s.highlight("var abc = 5.1232E-42");
+//var s = new Sintax("js");
+//var out = s.highlight("a / b");
+//console.log(out);
+/*var out = s.highlight("`hello world`");
 console.log(out);
+out = s.highlight("'hello world'");
+console.log(out);*/
 /*console.log("State 7: ", s.dfa.states[7]);
 s.dfa.move("a");
 console.log(s.shared);
@@ -201,24 +221,16 @@ console.log(s.shared);
 s.dfa.move(" ");
 console.log(s.shared);*/
 
-/*var it = Iterator("a = /bc/;");
-function iterate(it) {
-    while (it.hasNext()) {
-        if (it.peek() === "/") {
-            console.log(it.isRegexp());
-            it.next();
-        } else
-            it.next();
-    }
-}
-
-iterate(it);
-it = Iterator("return /bc/;");
-iterate(it);*/
-// add another string
-//s.dfa.move(" another");
-//console.log(s.shared);
-
+/*var sin = new Sintax("js");
+var ids = ["var a = 5;", "function c(a) {\n\treturn a;\n}", "// states should start with 0 and the initial should be 0\nfunction sintax(states) {\n    var saved = states;\n    var dfa = new DFA(states, 0);\n    //var out = \"\";\n\n    function colorize(text) {\n        out = \"\";\n        dfa = new DFA(saved, 0);\n        var iter = byChar(text);\n        while (iter.hasNext())\n            dfa.move(iter.next());\n        if (spanOpen)\n            out += \"</span>\";\n        console.log(out)\n        return out;\n    }\n\n    return {\n        dfa: dfa,\n        //out: out,\n        colorize: colorize\n    };\n}"];
+for (var i = 0; i < ids.length; i++) {
+    var n = ids[i];
+    var res = sin.highlight(n);
+    //test.string(res); // should be a string
+    console.log(res);
+    //console.log("match: " + res + res.match(/[0-9]+\.[0-9]+(E[\+\-][0-9]+)?(![\n\t ]+)/));
+    //test.assert.notEqual(res.match(/\<span class=\'sin_strings\'\>.+\<\/span\>/), null);
+}*/
 
 /*var s1 = new Sintax(JSLang);
 s1.dfa.move("new test");
@@ -226,3 +238,10 @@ s1.dfa.move("new test");
 // add another string
 s1.dfa.move(" and other stuff");*/
 //console.log(s1.shared);
+
+module.exports = {
+    Sintax: Sintax,
+    Languages: Languages,
+    Logic: Logic,
+    Colors: Colors
+}

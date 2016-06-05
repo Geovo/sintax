@@ -4,9 +4,9 @@
             "trigger": "num",
             "moveTo": "1",
             "func": "addSpan",
-            "params": ["number"]
+            "params": ["numbers"]
         }, {
-            "trigger": "Quote",
+            "trigger": "quote",
             "moveTo": "5",
             "func": "startString",
             "params": []
@@ -15,6 +15,11 @@
             "moveTo": "7",
             "func": "cacheClean",
             "params": []
+        }, {
+            "trigger": "operator",
+            "moveTo": "0",
+            "func": "addSpan",
+            "params": ["ops"]
         }, {
             "trigger": "notNum",
             "moveTo": "0",
@@ -84,11 +89,6 @@
         }],
 
         [{
-            "trigger": "Quote",
-            "moveTo": "0",
-            "func": "preEnd",
-            "params": []
-        }, {
             "trigger": "escape",
             "moveTo": "6",
             "func": "addChar",
@@ -97,6 +97,11 @@
             "trigger": "any",
             "moveTo": "5",
             "func": "addChar",
+            "params": []
+        }, {
+            "trigger": "stringEnd",
+            "moveTo": "0",
+            "func": "endString",
             "params": []
         }],
         [{
@@ -123,17 +128,22 @@
         "any": ".",
         "num": "[0-9]",
         "dot": "\\.",
-        "notNum": "[^0-9]",
+        "notNum": "[^0-9]?",
         "notDot": "[^\\.]",
         "id": "[a-zA-Z_]",
         "exp": "E",
         "plusMinus": "[\\+\\-]",
-        "Quote": "[\\'\"\\`]",
-        "escape": "\\",
+        "quote": "[\\'\"\\`]",
+        "stringEnd": "[\\'\"\\`]|(?:)",
+        "escape": "\\\\",
         "idStart": "[a-zA-Z_]",
         "idAll": "[a-zA-Z_0-9]",
         "notIdStart": "[^a-zA-Z_]",
-        "notIdAll": "[^a-zA-Z_0-9]"
+        "notIdAll": "[^a-zA-Z_0-9]?",
+        "asterisk": "\\*",
+        "notAsterisk": "[^\\*]",
+        "slash": "\\/",
+        "operator": "[\\+\\-\\*\\!\\^\\&\\%\\=]"
     }
 
 }
